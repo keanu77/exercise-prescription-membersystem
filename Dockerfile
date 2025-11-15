@@ -91,4 +91,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:${PORT}/api/v1', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # 使用 dumb-init 啟動應用
-CMD ["dumb-init", "node", "dist/main"]
+CMD ["dumb-init", "node", "dist/src/main"]

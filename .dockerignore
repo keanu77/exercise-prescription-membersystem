@@ -66,6 +66,4 @@ test/
 # 其他
 .prettierrc
 .eslintrc.js
-tsconfig.json
-tsconfig.build.json
-nest-cli.json
+# 注意：tsconfig.json, tsconfig.build.json, nest-cli.json 是建置必需檔案，不應排除
