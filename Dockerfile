@@ -26,8 +26,8 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 # 【建置期參數 - 寫死在 Dockerfile】
-# Prisma 需要 DATABASE_URL 來生成 client，這裡使用假的 URL
-ENV DATABASE_URL="mysql://user:password@localhost:3306/member_management"
+# Prisma 需要 DATABASE_URL 來生成 client
+ENV DATABASE_URL="mysql://root:AqRifMe085g34vn6zXkmx29tLuwh71Gd@tpe1.clusters.zeabur.com:25823/zeabur"
 ENV NODE_ENV="production"
 
 # 從 deps 階段複製 node_modules
