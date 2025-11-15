@@ -66,19 +66,14 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
 
-# 【建置期參數 - 寫死】
-# 設定執行環境為生產環境
+# 【運行期參數 - 預設值（可被 Zeabur 環境變數覆寫）】
 ENV NODE_ENV="production"
-
-# 【運行期參數 - 從環境變數讀取】
-# 這些參數會在 Zeabur 部署時從環境變數注入
-# DATABASE_URL - 資料庫連線（從 Zeabur 環境變數讀取）
-# JWT_SECRET - JWT 密鑰（從 Zeabur 環境變數讀取）
-# PORT - 伺服器端口（從 Zeabur 環境變數讀取，預設 3001）
-# CORS_ORIGIN - 允許的前端網址（從 Zeabur 環境變數讀取）
-
-# 預設端口（Zeabur 會覆寫此值）
+ENV DATABASE_URL="mysql://root:AqRifMe085g34vn6zXkmx29tLuwh71Gd@tpe1.clusters.zeabur.com:25823/zeabur"
 ENV PORT=3001
+
+# 以下參數建議在 Zeabur 環境變數中設定：
+# JWT_SECRET - JWT 密鑰（必須在 Zeabur 設定）
+# CORS_ORIGIN - 允許的前端網址（建議在 Zeabur 設定）
 
 # 暴露端口
 EXPOSE 3001
