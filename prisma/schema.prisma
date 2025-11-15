@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 管理員模型
+model Admin {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // 儲存加密後密碼（使用 bcrypt）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("admins")
+}
+
+// 會員模型
+model Member {
+  id        Int       @id @default(autoincrement())
+  memberId  String    @unique // 對外顯示用會員ID，例如 "M00001"
+  name      String
+  phone     String    @unique
+  email     String?   @unique
+  birthday  DateTime?
+  note      String?   @db.Text
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([phone])
+  @@index([email])
+  @@index([memberId])
+  @@index([createdAt])
+  @@map("members")
+}
