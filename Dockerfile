@@ -43,6 +43,14 @@ RUN npx prisma generate
 # 建置 NestJS 應用
 RUN npm run build
 
+# 編譯 seed.ts 供生產環境使用（在刪除 devDependencies 之前）
+RUN npx tsc prisma/seed.ts \
+    --outDir dist \
+    --module commonjs \
+    --skipLibCheck \
+    --esModuleInterop \
+    --resolveJsonModule
+
 # 安裝僅生產環境的依賴
 RUN npm ci --only=production && npm cache clean --force
 
