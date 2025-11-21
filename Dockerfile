@@ -44,7 +44,8 @@ COPY . .
 RUN npx prisma generate
 
 # 建置 NestJS 應用
-RUN npm run build
+# 使用 npx 確保能找到 @nestjs/cli
+RUN npx nest build
 
 # 編譯 seed.ts 供生產環境使用（在刪除 devDependencies 之前）
 RUN npx tsc prisma/seed.ts \
