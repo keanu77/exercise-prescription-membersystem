@@ -27,8 +27,9 @@ WORKDIR /app
 
 # 【建置期參數 - 從建置參數傳入】
 # Prisma 需要 DATABASE_URL 來生成 client
-# 建置時使用 --build-arg DATABASE_URL=xxx 傳入
-ARG DATABASE_URL
+# 提供預設值供建置使用（prisma generate 不需要真實連線）
+# 運行時會被 Zeabur 環境變數覆蓋
+ARG DATABASE_URL="mysql://user:password@localhost:3306/database"
 ENV DATABASE_URL=${DATABASE_URL}
 ENV NODE_ENV="production"
 
