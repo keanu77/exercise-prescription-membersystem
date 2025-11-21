@@ -25,9 +25,11 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# 【建置期參數 - 寫死在 Dockerfile】
+# 【建置期參數 - 從建置參數傳入】
 # Prisma 需要 DATABASE_URL 來生成 client
-ENV DATABASE_URL="mysql://root:AqRifMe085g34vn6zXkmx29tLuwh71Gd@tpe1.clusters.zeabur.com:25823/zeabur"
+# 建置時使用 --build-arg DATABASE_URL=xxx 傳入
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 ENV NODE_ENV="production"
 
 # 從 deps 階段複製 node_modules
@@ -74,14 +76,14 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/package*.json ./
 
-# 【運行期參數 - 預設值（可被 Zeabur 環境變數覆寫）】
+# 【運行期參數 - 必須透過環境變數設定】
 ENV NODE_ENV="production"
-ENV DATABASE_URL="mysql://root:AqRifMe085g34vn6zXkmx29tLuwh71Gd@tpe1.clusters.zeabur.com:25823/zeabur"
 ENV PORT=3001
 
-# 以下參數建議在 Zeabur 環境變數中設定：
-# JWT_SECRET - JWT 密鑰（必須在 Zeabur 設定）
-# CORS_ORIGIN - 允許的前端網址（建議在 Zeabur 設定）
+# ⚠️ 以下參數【必須】在 Zeabur/部署平台環境變數中設定：
+# DATABASE_URL - 資料庫連線字串（必須設定，不提供預設值）
+# JWT_SECRET - JWT 密鑰（必須設定，不提供預設值）
+# CORS_ORIGIN - 允許的前端網址（建議設定）
 
 # 暴露端口
 EXPOSE 3001

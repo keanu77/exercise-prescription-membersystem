@@ -4,9 +4,15 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
-    // 確保 DATABASE_URL 環境變數存在，如果不存在則使用 Zeabur MySQL 預設值
-    const databaseUrl = process.env.DATABASE_URL ||
-      'mysql://root:AqRifMe085g34vn6zXkmx29tLuwh71Gd@tpe1.clusters.zeabur.com:25823/zeabur';
+    // 確保 DATABASE_URL 環境變數存在，避免安全風險不提供預設值
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      throw new Error(
+        'DATABASE_URL environment variable is required. ' +
+        'Please set it in your .env file or deployment platform.'
+      );
+    }
 
     super({
       datasources: {
