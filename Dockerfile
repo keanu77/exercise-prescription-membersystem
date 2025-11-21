@@ -6,7 +6,7 @@
 # ========================================
 # 階段 1: 依賴安裝
 # ========================================
-FROM node:18-alpine AS deps
+FROM node:20-alpine AS deps
 
 # 設定工作目錄
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN npm ci
 # ========================================
 # 階段 2: 建置階段
 # ========================================
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -59,7 +59,7 @@ RUN npm ci --only=production && npm cache clean --force
 # ========================================
 # 階段 3: 運行階段
 # ========================================
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 
 # 安裝 dumb-init（用於正確處理訊號）
 RUN apk add --no-cache dumb-init
