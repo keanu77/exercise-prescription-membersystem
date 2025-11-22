@@ -50,7 +50,14 @@ const app_service_1 = require("./app.service");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const members_module_1 = require("./members/members.module");
+const logger_module_1 = require("./common/logger/logger.module");
+const http_logger_middleware_1 = require("./common/middleware/http-logger.middleware");
+const request_id_middleware_1 = require("./common/middleware/request-id.middleware");
 let AppModule = class AppModule {
+    configure(consumer) {
+        consumer.apply(request_id_middleware_1.RequestIdMiddleware).forRoutes('*');
+        consumer.apply(http_logger_middleware_1.HttpLoggerMiddleware).forRoutes('*');
+    }
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
@@ -85,6 +92,7 @@ exports.AppModule = AppModule = __decorate([
                     ttl: 60000,
                     limit: 100,
                 }]),
+            logger_module_1.LoggerModule,
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             members_module_1.MembersModule,

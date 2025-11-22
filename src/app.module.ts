@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -8,6 +8,9 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MembersModule } from './members/members.module';
+import { LoggerModule } from './common/logger/logger.module';
+import { HttpLoggerMiddleware } from './common/middleware/http-logger.middleware';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 @Module({
   imports: [
@@ -53,6 +56,8 @@ import { MembersModule } from './members/members.module';
       ttl: 60000,  // 時間窗口：60秒
       limit: 100,  // 每個窗口最多 100 個請求（一般 API）
     }]),
+    // Logger 配置
+    LoggerModule,
     PrismaModule,
     AuthModule,
     MembersModule,
@@ -67,4 +72,12 @@ import { MembersModule } from './members/members.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // 1. 先套用 Request ID Middleware（必須在 Logger 之前）
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+
+    // 2. 再套用 HTTP Logger Middleware
+    consumer.apply(HttpLoggerMiddleware).forRoutes('*');
+  }
+}
