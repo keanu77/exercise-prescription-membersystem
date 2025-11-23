@@ -1,0 +1,127 @@
+name: Database Backup
+
+on:
+  # 每天凌晨 2:00 (UTC) 自動執行備份
+  schedule:
+    - cron: '0 2 * * *'  # 每天 02:00 UTC (台北時間 10:00 AM)
+
+  # 手動觸發備份
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: '備份保留天數'
+        required: false
+        default: '30'
+
+jobs:
+  backup:
+    name: Backup Database
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout 程式碼
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    # 2. 設定 MySQL 客戶端
+    - name: 🔧 Setup MySQL Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mysql-client
+
+    # 3. 執行資料庫備份
+    - name: 🔒 Backup Database
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        RETENTION_DAYS: ${{ github.event.inputs.retention_days || '30' }}
+      run: |
+        echo "🔄 開始備份資料庫..."
+        bash scripts/backup/db-backup.sh
+
+    # 4. 上傳備份到 GitHub Artifacts
+    - name: 📤 Upload Backup to Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: database-backup-${{ github.run_number }}
+        path: backups/*.sql.gz
+        retention-days: 30  # GitHub Artifacts 保留 30 天
+
+    # 5. 備份摘要
+    - name: 📊 Backup Summary
+      run: |
+        echo "## 🔒 Database Backup Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Backup Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Date:** $(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow Run:** #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Retention:** 30 days" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Backup Files" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        ls -lh backups/*.sql.gz 2>/dev/null || echo "No backup files found"
+        ls -lh backups/*.sql.gz >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "No backup files" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Download Backup" >> $GITHUB_STEP_SUMMARY
+        echo "Backup files are available in the **Artifacts** section of this workflow run." >> $GITHUB_STEP_SUMMARY
+        echo "They will be retained for 30 days." >> $GITHUB_STEP_SUMMARY
+
+    # 6. 備份失敗通知（可選）
+    - name: ⚠️ Backup Failed Notification
+      if: failure()
+      run: |
+        echo "❌ Database backup failed!"
+        echo "Please check the workflow logs for details."
+        echo ""
+        echo "## ❌ Backup Failed" >> $GITHUB_STEP_SUMMARY
+        echo "The database backup process encountered an error." >> $GITHUB_STEP_SUMMARY
+        echo "Please review the workflow logs for more information." >> $GITHUB_STEP_SUMMARY
+
+  # 可選：驗證備份檔案
+  verify:
+    name: Verify Backup
+    runs-on: ubuntu-latest
+    needs: backup
+    if: success()
+
+    steps:
+    - name: 📥 Download Backup
+      uses: actions/download-artifact@v4
+      with:
+        name: database-backup-${{ github.run_number }}
+        path: ./backups
+
+    - name: 🔍 Verify Backup File
+      run: |
+        echo "🔍 驗證備份檔案..."
+
+        # 檢查備份檔案是否存在
+        if ls backups/*.sql.gz 1> /dev/null 2>&1; then
+          echo "✅ 備份檔案存在"
+
+          # 檢查檔案大小（應該大於 1KB）
+          for file in backups/*.sql.gz; do
+            SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file")
+            if [ "$SIZE" -gt 1024 ]; then
+              echo "✅ 檔案大小正常: $(basename $file) ($SIZE bytes)"
+            else
+              echo "❌ 檔案太小，可能備份失敗: $(basename $file) ($SIZE bytes)"
+              exit 1
+            fi
+
+            # 測試 gzip 檔案完整性
+            if gzip -t "$file"; then
+              echo "✅ 壓縮檔案完整性正常"
+            else
+              echo "❌ 壓縮檔案損壞"
+              exit 1
+            fi
+          done
+        else
+          echo "❌ 找不到備份檔案"
+          exit 1
+        fi
+
+        echo ""
+        echo "## ✅ Backup Verification Passed" >> $GITHUB_STEP_SUMMARY
+        echo "All backup files are valid and intact." >> $GITHUB_STEP_SUMMARY
